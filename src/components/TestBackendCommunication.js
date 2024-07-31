@@ -58,7 +58,7 @@ const TestBackendCommunication = () => {
     }
 
     const testWMSData = {
-        loc_vicgrid: [2634140, 2366378],  // Example coordinates
+        coordinates: [2634140, 2366378],  // Example coordinates
         crs_type: "epsg:3111",
         min_resolution: 100,
         pixels: [100, 100],

@@ -1,19 +1,12 @@
-import logo from './logo.svg';
 import './App.css';
-import TestBackendCommunication from './components/TestBackendCommunication';
+import InputForm from './components/InputForm';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Testing Backend</h1>
-        <TestBackendCommunication />
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
+    <div id="root" className="app">
+      <h1>Testing InteractiveMap</h1>
+        <InputForm />
 
-      </header>
     </div>
   );
 }
