@@ -9,12 +9,10 @@ const InputForm = () => {
         hydraulic_conductivity: 5,
         average_porosity: 0.25,
         bore_lifetime_year: 30,
-        groundwater_depth: 25,
         long_term_decline_rate: 1,
         allowable_drawdown: 25,
         safety_margin: 25,
-        // min_resolution: 100,
-        // pixels: "100,100",
+
     });
 
     const [isProductionPump, setIsProductionPump] = useState(true);
@@ -28,7 +26,6 @@ const InputForm = () => {
         hydraulic_conductivity: "Aquifer hydraulic conductivity (m/day)",
         average_porosity: "Average reservoir porosity (0 - 1)",
         bore_lifetime_year: "Bore/project lifetime (years)",
-        groundwater_depth: "Depth of the groundwater table (m)",
         long_term_decline_rate: "Long-term decline rate in water level (m/year)",
         allowable_drawdown: "Allowable drawdown (m)",
         safety_margin: "Safety margin (m)",
@@ -46,7 +43,6 @@ const InputForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        //const pixels = inputValues.pixels.split(',').map(Number);
         const data = {
             coordinates: coordinates,
             crs_type: "wgs84",
@@ -57,7 +53,6 @@ const InputForm = () => {
                 hydraulic_conductivity: Number(inputValues.hydraulic_conductivity),
                 average_porosity: Number(inputValues.average_porosity),
                 bore_lifetime_year: Number(inputValues.bore_lifetime_year),
-                groundwater_depth: Number(inputValues.groundwater_depth),
                 long_term_decline_rate: Number(inputValues.long_term_decline_rate),
                 allowable_drawdown: Number(inputValues.allowable_drawdown),
                 safety_margin: Number(inputValues.safety_margin),
@@ -66,19 +61,18 @@ const InputForm = () => {
         };
         try {
             const response = await axios.post('http://localhost:8000/api/calculate-wellbore', data);
-            //response.data to display
             setResponseData(response.data);
             setError(null);
         } catch (error) {
-            //setError(error);
             console.log(error);
-            setError('An error occurred while fetching the data.');
+            setError(error.message);
             setResponseData(null);
         }
     }
     return (
         <div>
-            <InteractiveMap setCoordinates={setCoordinates} />
+            <div class="map-wrapper">
+                <InteractiveMap setCoordinates={setCoordinates} /></div>
             <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
             <form onSubmit={handleSubmit}>
                 {Object.keys(inputValues).map((key) => (
@@ -105,9 +99,26 @@ const InputForm = () => {
             {responseData && (
                 <div className="response-data">
                     <h3>Response Data:</h3>
-                    <pre>{JSON.stringify(responseData, null, 2)}</pre>
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>{renderTableRows(responseData)}</tbody>
+                        </table>
+                    </div>
                 </div>
             )}
+
+            {/* {responseData && (
+                <div className="response-data">
+                    <h3>Response Data:</h3>
+                    <pre>{JSON.stringify(responseData, null, 2)}</pre>
+                </div>
+            )} */}
             {error && (
                 <div className="error-message">
                     <p>{error}</p>
@@ -116,46 +127,42 @@ const InputForm = () => {
         </div>
     );
 
-    // return (
-    //     <div>
-    //         <InteractiveMap setCoordinates={setCoordinates} />
-    //         <h5>current coordinates: {coordinates[0]}, {coordinates[1]}</h5>
-    //         <form onSubmit={handleSubmit}>
-    //             {Object.keys(inputValues).map((key) => (
-    //                 <div key={key}>
-    //                     <label>{key.replace('_', ' ')}:</label>
-    //                     <input
-    //                         type="text"
-    //                         name={key}
-    //                         value={inputValues[key]}
-    //                         onChange={handleInputChange}
-    //                     />
-    //                 </div>
-    //             ))}
-    //             <div>
-    //                 <label>Production Pump:</label>
-    //                 <input
-    //                     type="checkbox"
-    //                     checked={isProductionPump}
-    //                     onChange={handleToggleChange}
-    //                 />
-    //             </div>
-    //             <button type="submit">Submit</button>
-    //         </form>
-    //         {responseData && (
-    //             <div>
-    //                 <h3>Response Data:</h3>
-    //                 <pre>{JSON.stringify(responseData, null, 2)}</pre>
-    //             </div>
-    //         )}
-    //         {/* {error && (
-    //             <div>
-    //                 <h4>Error</h4>
-    //                 <p>{error}</p>
-    //             </div>
-    //         )} */}
-    //     </div>
-    // );
 }
+
+const renderTableRows = (data, parentKey = '') => {
+    const rows = [];
+
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            const value = data[key];
+
+            if (Array.isArray(value)) {
+                rows.push(
+                    <tr key={parentKey + key}>
+                        <td>{parentKey + key}</td>
+                        <td>{value.map((item) => (item === null ? 'N/A' : item)).join(', ')}</td>
+                    </tr>
+                );
+            } else if (typeof value === 'object' && value !== null) {
+                rows.push(
+                    <tr key={parentKey + key}>
+                        <th colSpan="2">{parentKey + key}</th>
+                    </tr>
+                );
+                rows.push(...renderTableRows(value, `${key}.`));
+            } else {
+                rows.push(
+                    <tr key={parentKey + key}>
+                        <td>{parentKey + key}</td>
+                        <td>{value === null ? 'N/A' : value}</td>
+                    </tr>
+                );
+            }
+        }
+    }
+
+    return rows;
+};
+
 
 export default InputForm;
