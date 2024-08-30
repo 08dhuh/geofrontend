@@ -60,6 +60,7 @@ const InputForm = () => {
             is_production_pump: isProductionPump.toString(),
         };
         try {
+            //Update the API endpoint URL in the frontend code (e.g., in `InputForm.js`) to match the address of your running GeoBackend API.
             const response = await axios.post('http://localhost:8000/api/calculate-wellbore', data);
             setResponseData(response.data);
             setError(null);
