@@ -71,6 +71,7 @@ const InputForm = () => {
         }
     }
     return (
+        <>
         <div>
             <div class="map-wrapper">
                 <InteractiveMap setCoordinates={setCoordinates} /></div>
@@ -97,6 +98,8 @@ const InputForm = () => {
                 </div>
                 <button type="submit">Submit</button>
             </form>
+            </div>
+            <div>
             {responseData && (
                 <div className="response-data">
                     <h3>Response Data:</h3>
@@ -126,6 +129,7 @@ const InputForm = () => {
                 </div>
             )}
         </div>
+        </>
     );
 
 }
@@ -138,20 +142,43 @@ const renderTableRows = (data, parentKey = '') => {
             const value = data[key];
 
             if (Array.isArray(value)) {
-                rows.push(
-                    <tr key={parentKey + key}>
-                        <td>{parentKey + key}</td>
-                        <td>{value.map((item) => (item === null ? 'N/A' : item)).join(', ')}</td>
-                    </tr>
-                );
+                // If the value is an array, check if it contains objects (special case for cost_estimation_table)
+                if (parentKey + key === 'data.cost_results.cost_estimation_table') {
+                    // If it's the cost_estimation_table, iterate over the array
+                    value.forEach((item, index) => {
+                        rows.push(
+                            <React.Fragment key={`${parentKey}${key}.${index}`}>
+                                <tr>
+                                    <th colSpan="2">Cost Estimation - Item {index + 1}</th>
+                                </tr>
+                                {Object.entries(item).map(([subKey, subValue]) => (
+                                    <tr key={`${parentKey}${key}.${index}.${subKey}`}>
+                                        <td>{subKey}</td>
+                                        <td>{subValue === null ? 'N/A' : subValue}</td>
+                                    </tr>
+                                ))}
+                            </React.Fragment>
+                        );
+                    });
+                } else {
+                    // If it's a regular array, display its items in a single cell
+                    rows.push(
+                        <tr key={parentKey + key}>
+                            <td>{parentKey + key}</td>
+                            <td>{value.map((item) => (item === null ? 'N/A' : item)).join(', ')}</td>
+                        </tr>
+                    );
+                }
             } else if (typeof value === 'object' && value !== null) {
+                // If the value is an object, add a header row and recursively render its children
                 rows.push(
                     <tr key={parentKey + key}>
                         <th colSpan="2">{parentKey + key}</th>
                     </tr>
                 );
-                rows.push(...renderTableRows(value, `${key}.`));
+                rows.push(...renderTableRows(value, `${parentKey}${key}.`));
             } else {
+                // For primitive values (number, string, etc.), render directly
                 rows.push(
                     <tr key={parentKey + key}>
                         <td>{parentKey + key}</td>
@@ -164,6 +191,58 @@ const renderTableRows = (data, parentKey = '') => {
 
     return rows;
 };
+
+
+// const renderTableRows = (data, parentKey = '') => {
+//     const rows = [];
+
+//     for (const key in data) {
+//         if (data.hasOwnProperty(key)) {
+//             const value = data[key];
+
+//             if (Array.isArray(value)) {
+//                 rows.push(
+//                     <tr key={parentKey + key}>
+//                         <td>{parentKey + key}</td>
+//                         <td>{value.map((item) => (item === null ? 'N/A' : item)).join(', ')}</td>
+//                     </tr>
+//                 );
+//             } else if (typeof value === 'object' && value !== null) {
+//                 // **for cost_estimation_table:**
+//                 if (parentKey === 'cost_results.cost_estimation_table.') {
+//                     // If it's the cost_estimation_table, iterate over the array
+//                     return value.map((item, index) => (
+//                         <React.Fragment key={index}>
+//                             {Object.entries(item).map(([subKey, subValue]) => (
+//                                 <tr key={`${parentKey}${index}.${subKey}`}>
+//                                     <td>{subKey}</td>
+//                                     <td>{subValue}</td>
+//                                 </tr>
+//                             ))}
+//                         </React.Fragment>
+//                     ));
+//                 } else {
+//                     //other nested objects
+//                     rows.push(
+//                         <tr key={parentKey + key}>
+//                             <th colSpan="2">{parentKey + key}</th>
+//                         </tr>
+//                     );
+//                     rows.push(...renderTableRows(value, `${key}.`));
+//                 }
+//             } else {
+//                 rows.push(
+//                     <tr key={parentKey + key}>
+//                         <td>{parentKey + key}</td>
+//                         <td>{value === null ? 'N/A' : value}</td>
+//                     </tr>
+//                 );
+//             }
+//         }
+//     }
+
+//     return rows;
+// };
 
 
 export default InputForm;
