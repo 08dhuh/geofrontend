@@ -1,6 +1,39 @@
-# Getting Started with Create React App
+# Geomapping Portal Frontend
 
+This project provides a frontend interface for interacting with the GeoBackend API to calculate wellbore parameters and installation costs based on geological data.
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+# Features
+
+- **Interactive Map:**  Allows users to select a location on a map to specify the wellbore site.
+- **Input Form:** Provides a user-friendly form to input required parameters for wellbore calculations.
+- **Data Visualisation:** Displays the calculated wellbore parameters and installation cost breakdown in a clear and organized manner.
+- **API Integration:**  Communicates with the GeoBackend API(https://github.com/08dhuh/geobackend) to send user input and retrieve calculation results.
+
+## Frontend Dependencies
+
+- React
+- Leaflet (for the interactive map)
+- Axios (for API communication)
+
+## Installation
+
+1. Clone the repository.
+2. Navigate to the frontend directory: `cd frontend`
+3. Install dependencies: `npm install`
+
+## Configuration
+
+1. Update the API endpoint URL in the frontend code (e.g., in `InputForm.js`) to match the address of your running GeoBackend API.
+
+## Usage Example
+
+1. Start the development server: `npm start`
+2. Open your web browser and navigate to `http://localhost:3000`, or the port specified in your development server configuration.
+3. Use the interactive map to select a location for the wellbore.
+4. Fill in the required parameters or use the default values in the input form.
+5. Submit the form to trigger the calculation.
+6. The calculated wellbore parameters and installation cost will be displayed on the page.
 
 ## Available Scripts
 
