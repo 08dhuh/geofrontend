@@ -51,7 +51,8 @@ const TestBackendCommunication = () => {
             "long_term_decline_rate": 1,
             "allowable_drawdown": 25,
             "safety_margin": 25,
-            "target_aquifer_layer": "109lmta",
+            //"target_aquifer_layer": "109lmta",
+            "target_aquifer_layer": "111lta",
             "top_aquifer_layer": "100qa"
         },
         "is_production_pump": "true"
