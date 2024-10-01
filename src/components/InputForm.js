@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import InteractiveMap from './InteractiveMap';
 
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+
 const InputForm = () => {
     const [coordinates, setCoordinates] = useState([-38.1950, 146.5400]);
     const [inputValues, setInputValues] = useState({
@@ -60,7 +63,6 @@ const InputForm = () => {
             is_production_pump: isProductionPump.toString(),
         };
         try {
-            //Update the API endpoint URL in the frontend code (e.g., in `InputForm.js`) to match the address of your running GeoBackend API.
             const response = await axios.post('http://localhost:8000/api/calculate-wellbore', data);
             setResponseData(response.data);
             setError(null);
@@ -70,37 +72,119 @@ const InputForm = () => {
             setResponseData(null);
         }
     }
+
+    const downloadPDF = () => {
+        const doc = new jsPDF();
+
+        const pageHeight = doc.internal.pageSize.height;
+        const margin = 10;
+        const lineHeight = 10;
+        let yPosition = margin;
+
+        
+        const text = JSON.stringify(responseData, null, 2);
+        const lines = doc.splitTextToSize(text, doc.internal.pageSize.width - margin * 2); // Split text into lines
+
+        
+        lines.forEach((line) => {
+            if (yPosition + lineHeight > pageHeight - margin) {
+                doc.addPage(); 
+                yPosition = margin; 
+            }
+            doc.text(line, margin, yPosition);
+            yPosition += lineHeight;
+        });
+        //doc.text(JSON.stringify(responseData, null, 2), 10, 10);
+        doc.save('response_data.pdf');
+    };
+
+    const downloadExcel = () => {
+        const flattenedData = flattenObject(responseData);
+        const transposedData = Object.keys(flattenedData).map((key) => {
+            return { Parameter: key, Value: flattenedData[key] };
+        });
+        //const worksheet = XLSX.utils.json_to_sheet([responseData]);
+        const worksheet = XLSX.utils.json_to_sheet(transposedData);
+        //const worksheet = XLSX.utils.json_to_sheet([flattenedData]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "ResponseData");
+        XLSX.writeFile(workbook, 'response_data.xlsx');
+    };
+
+    const renderTotalCostTable = () => {
+        if (!responseData) return null;
+
+        const totalCostTable = responseData.data.cost_results.total_cost_table;
+        const stages = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
+        return (
+            <table>
+                <thead>
+                    <tr>
+                        <th>Stage</th>
+                        <th>Low</th>
+                        <th>Base</th>
+                        <th>High</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {stages.map((stage, index) => (
+                        <tr key={stage}>
+                            <td>{stage}</td>
+                            <td>{Math.round(totalCostTable.low[index])}</td>
+                            <td>{Math.round(totalCostTable.base[index])}</td>
+                            <td>{Math.round(totalCostTable.high[index])}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        );
+
+    };
+
     return (
         <>
-        <div>
-            <div class="map-wrapper">
-                <InteractiveMap setCoordinates={setCoordinates} /></div>
-            <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
-            <form onSubmit={handleSubmit}>
-                {Object.keys(inputValues).map((key) => (
-                    <div key={key} className="form-group">
-                        <label>{labels[key]}</label>
+            <div>
+                <div class="map-wrapper">
+                    <InteractiveMap setCoordinates={setCoordinates} />
+                </div>
+                <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
+                <form onSubmit={handleSubmit}>
+                    {Object.keys(inputValues).map((key) => (
+                        <div key={key} className="form-group">
+                            <label>{labels[key]}</label>
+                            <input
+                                type="text"
+                                name={key}
+                                value={inputValues[key]}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                    ))}
+                    <div className="form-group">
+                        <label>Production Pump:</label>
                         <input
-                            type="text"
-                            name={key}
-                            value={inputValues[key]}
-                            onChange={handleInputChange}
+                            type="checkbox"
+                            checked={isProductionPump}
+                            onChange={handleToggleChange}
                         />
                     </div>
-                ))}
-                <div className="form-group">
-                    <label>Production Pump:</label>
-                    <input
-                        type="checkbox"
-                        checked={isProductionPump}
-                        onChange={handleToggleChange}
-                    />
-                </div>
-                <button type="submit">Submit</button>
-            </form>
+                    <button type="submit">Submit</button>
+                </form>
             </div>
             <div>
-            {responseData && (
+                {responseData && (
+                    <div className="response-data">
+                        <h3>Total Cost Table(AUD)</h3>
+                        {renderTotalCostTable()}
+
+                        <div className="buttons">
+                            <h4>Download detailed cost breakdown and wellbore specifications:</h4>
+                            <button onClick={downloadPDF}>Download as PDF</button>
+                            <button onClick={downloadExcel}>Download as Excel</button>
+                        </div>
+                    </div>
+                )}
+                {/* {responseData && (
                 <div className="response-data">
                     <h3>Response Data:</h3>
                     <div className="table-container">
@@ -115,25 +199,44 @@ const InputForm = () => {
                         </table>
                     </div>
                 </div>
-            )}
+            )} */}
 
-            {/* {responseData && (
+                {/* {responseData && (
                 <div className="response-data">
                     <h3>Response Data:</h3>
                     <pre>{JSON.stringify(responseData, null, 2)}</pre>
                 </div>
             )} */}
-            {error && (
-                <div className="error-message">
-                    <p>{error}</p>
-                </div>
-            )}
-        </div>
+                {error && (
+                    <div className="error-message">
+                        <p>{error}</p>
+                    </div>
+                )}
+            </div>
         </>
     );
 
 }
 
+const flattenObject = (obj, parentKey = '', res = {}) => {
+    for (let key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const propName = parentKey ? `${parentKey}.${key}` : key;
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
+                if (Array.isArray(obj[key])) {
+                    obj[key].forEach((item, index) => {
+                        flattenObject(item, `${propName}.${index}`, res);
+                    });
+                } else {
+                    flattenObject(obj[key], propName, res); 
+                }
+            } else {
+                res[propName] = obj[key];
+            }
+        }
+    }
+    return res;
+};
 const renderTableRows = (data, parentKey = '') => {
     const rows = [];
 
