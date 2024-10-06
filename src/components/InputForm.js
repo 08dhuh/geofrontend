@@ -3,6 +3,7 @@ import axios from 'axios';
 import InteractiveMap from './InteractiveMap';
 
 import jsPDF from 'jspdf';
+import 'jspdf-autotable'
 import * as XLSX from 'xlsx';
 
 const InputForm = () => {
@@ -84,7 +85,7 @@ const InputForm = () => {
 
     const flattenResponseData = (data) => {
         const flattenedData = {};
-    
+
         //installation results
         const installationResults = data.data.installation_results;
         for (const key in installationResults) {
@@ -92,17 +93,17 @@ const InputForm = () => {
                 flattenedData[key] = installationResults[key];
             }
         }
-    
+
         //casing_stage_table
         const casingStagesData = installationResults.casing_stage_table;
         flattenedData['casing_stage_table'] = casingStagesData.top.map((_, index) => ({
-            stage: casingStages[index], 
+            stage: casingStages[index],
             top: casingStagesData.top[index],
             bottom: casingStagesData.bottom[index],
             casing: casingStagesData.casing[index],
             drill_bit: casingStagesData.drill_bit[index],
         }));
-    
+
         //cost estimation table
         const costResults = data.data.cost_results.cost_estimation_table;
         flattenedData['cost_estimation_table'] = costResults.map(item => ({
@@ -112,53 +113,132 @@ const InputForm = () => {
             base: Math.round(item.base),
             high: Math.round(item.high),
         }));
-    
+
         return flattenedData;
     };
-    
+
 
 
     const downloadPDF = () => {
         const doc = new jsPDF();
 
-        const pageHeight = doc.internal.pageSize.height;
         const margin = 10;
         const lineHeight = 10;
         let yPosition = margin;
 
-        
-        const text = JSON.stringify(responseData, null, 2);
-        const lines = doc.splitTextToSize(text, doc.internal.pageSize.width - margin * 2); // Split text into lines
+        const installationResults = flattenResponseData(responseData);
 
-        
-        lines.forEach((line) => {
-            if (yPosition + lineHeight > pageHeight - margin) {
-                doc.addPage(); 
-                yPosition = margin; 
-            }
-            doc.text(line, margin, yPosition);
-            yPosition += lineHeight;
+
+        doc.setFontSize(18);
+        doc.text("Wellbore Results", margin, yPosition);
+        yPosition += lineHeight;
+
+
+        doc.setFontSize(15);
+        doc.text("Installation Results", margin, yPosition);
+        yPosition += lineHeight;
+
+
+        const installationData = Object.keys(installationResults)
+        .filter(key => !Array.isArray(installationResults[key]))
+        .map(key => [`${key}: ${installationResults[key]} (m)`]);
+        doc.autoTable({
+            body: installationData,
+            startY: yPosition,
+            margin: { top: 10 },
+            theme: 'grid',
         });
-        //doc.text(JSON.stringify(responseData, null, 2), 10, 10);
+        yPosition = doc.autoTable.previous.finalY + 10;
+
+        // Casing Stage Table
+        doc.setFontSize(15);
+        doc.text("Casing Stage Table", margin, yPosition);
+        yPosition += lineHeight;
+
+        const casingStageData = installationResults.casing_stage_table.map(stage => [
+            stage.stage,
+            stage.top,
+            stage.bottom,
+            stage.casing,
+            stage.drill_bit,
+        ]);
+
+        doc.autoTable({
+            head: [['Stage', 'Top (m)', 'Bottom (m)', 'Casing (m)', 'Drill Bit (m)']],
+            body: casingStageData,
+            startY: yPosition,
+            margin: { top: 10 },
+            theme: 'grid',
+        });
+
+
+        yPosition = doc.autoTable.previous.finalY + 10; 
+
+        // Cost Breakdown
+        doc.setFontSize(15);
+        doc.text("Cost Breakdown", margin, yPosition);
+        yPosition += lineHeight;
+
+        const costEstimationData = installationResults.cost_estimation_table.map(item => [
+            item.stage,
+            item.component,
+            item.low,
+            item.base,
+            item.high,
+        ]);
+
+        doc.autoTable({
+            head: [['Stage', 'Component', 'Low (AUD)', 'Base (AUD)', 'High (AUD)']],
+            body: costEstimationData,
+            startY: yPosition,
+            margin: { top: 10 },
+            theme: 'grid',
+        });
+  
         doc.save('response_data.pdf');
     };
 
     const downloadExcel = () => {
-        // const flattenedData = flattenResponseData(responseData);
-        // const excelData = [
-        //     ...flattenedData.casing_stage_table,
-        //     ...flattenedData.cost_estimation_table,
-        // ];
-        const flattenedData = flattenObject(responseData);
-        const excelData = Object.keys(flattenedData).map((key) => {
-            return { Parameter: key, Value: flattenedData[key] };
-        });
-        const worksheet = XLSX.utils.json_to_sheet([excelData]);
-        //const worksheet = XLSX.utils.json_to_sheet([responseData]);
-        //const worksheet = XLSX.utils.json_to_sheet(transposedData);
-        //const worksheet = XLSX.utils.json_to_sheet([flattenedData]);
+        const installationResults = flattenResponseData(responseData);
+    
+
+        const installationData = Object.keys(installationResults)
+            .filter(key => !Array.isArray(installationResults[key]))
+            .map(key => ({
+                Parameter: key,
+                Value: installationResults[key]
+            }));
+
+
+        const casingStageData = installationResults.casing_stage_table.map(stage => ({
+            Stage: stage.stage,
+            Top: stage.top,
+            Bottom: stage.bottom,
+            Casing: stage.casing,
+            Drill_Bit: stage.drill_bit
+        }));
+
+
+        const costEstimationData = installationResults.cost_estimation_table.map(item => ({
+            Stage: item.stage,
+            Component: item.component,
+            Low: item.low,
+            Base: item.base,
+            High: item.high
+        }));
+
+
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "ResponseData");
+
+        const installationWorksheet = XLSX.utils.json_to_sheet(installationData);
+        XLSX.utils.book_append_sheet(workbook, installationWorksheet, "Installation Results");
+    
+        const casingStageWorksheet = XLSX.utils.json_to_sheet(casingStageData);
+        XLSX.utils.book_append_sheet(workbook, casingStageWorksheet, "Casing Stage Table");
+    
+        const costEstimationWorksheet = XLSX.utils.json_to_sheet(costEstimationData);
+        XLSX.utils.book_append_sheet(workbook, costEstimationWorksheet, "Cost Breakdown");
+
         XLSX.writeFile(workbook, 'response_data.xlsx');
     };
 
@@ -224,49 +304,27 @@ const InputForm = () => {
             </div>
             <div>
                 {responseData && (
-                    <div className="response-data">
-                        <h3>Total Cost Table(AUD)</h3>
-                        {renderTotalCostTable()}
-
+                        <div className="response-data">
+                            <h3>Total Cost Table(AUD)</h3>
+                            {renderTotalCostTable()}
+                        
 
                         <div className="buttons">
                             <h4>Download detailed cost breakdown and wellbore specifications:</h4>
                             <button onClick={downloadPDF}>Download as PDF</button>
                             <button onClick={downloadExcel}>Download as Excel</button>
-                        </div>                        
+                        </div>
 
                     </div>
                 )}
-                </div>
-                <div>
+            </div>
+            <div id="result-display">
                 {responseData && (
                     <div className="response-data">
                         <ResultDisplay flattenedData={flattenResponseData(responseData)} />
-                        </div>
-                )}
-                {/* {responseData && (
-                <div className="response-data">
-                    <h3>Response Data:</h3>
-                    <div className="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Parameter</th>
-                                    <th>Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>{renderTableRows(responseData)}</tbody>
-                        </table>
                     </div>
-                </div>
-            )} */}
+                )}
 
-                {/* {responseData && (
-                <div className="response-data">
-                    <h3>Response Data:</h3>
-                    <pre>{JSON.stringify(responseData, null, 2)}</pre>
-                </div>
-            )} */}
             </div>
             <div>
                 {error && (
@@ -280,25 +338,6 @@ const InputForm = () => {
 
 }
 
-const flattenObject = (obj, parentKey = '', res = {}) => {
-    for (let key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-            const propName = parentKey ? `${parentKey}.${key}` : key;
-            if (typeof obj[key] === 'object' && obj[key] !== null) {
-                if (Array.isArray(obj[key])) {
-                    obj[key].forEach((item, index) => {
-                        flattenObject(item, `${propName}.${index}`, res);
-                    });
-                } else {
-                    flattenObject(obj[key], propName, res); 
-                }
-            } else {
-                res[propName] = obj[key];
-            }
-        }
-    }
-    return res;
-};
 
 const ResultDisplay = ({ flattenedData }) => {
     return (
@@ -369,116 +408,6 @@ const ResultDisplay = ({ flattenedData }) => {
         </div>
     );
 };
-
-// const renderTableRows = (data, parentKey = '') => {
-//     const rows = [];
-
-//     for (const key in data) {
-//         if (data.hasOwnProperty(key)) {
-//             const value = data[key];
-
-//             if (Array.isArray(value)) {
-//                 // If the value is an array, check if it contains objects (special case for cost_estimation_table)
-//                 if (parentKey + key === 'data.cost_results.cost_estimation_table') {
-//                     // If it's the cost_estimation_table, iterate over the array
-//                     value.forEach((item, index) => {
-//                         rows.push(
-//                             <React.Fragment key={`${parentKey}${key}.${index}`}>
-//                                 <tr>
-//                                     <th colSpan="2">Cost Estimation - Item {index + 1}</th>
-//                                 </tr>
-//                                 {Object.entries(item).map(([subKey, subValue]) => (
-//                                     <tr key={`${parentKey}${key}.${index}.${subKey}`}>
-//                                         <td>{subKey}</td>
-//                                         <td>{subValue === null ? 'N/A' : subValue}</td>
-//                                     </tr>
-//                                 ))}
-//                             </React.Fragment>
-//                         );
-//                     });
-//                 } else {
-//                     // If it's a regular array, display its items in a single cell
-//                     rows.push(
-//                         <tr key={parentKey + key}>
-//                             <td>{parentKey + key}</td>
-//                             <td>{value.map((item) => (item === null ? 'N/A' : item)).join(', ')}</td>
-//                         </tr>
-//                     );
-//                 }
-//             } else if (typeof value === 'object' && value !== null) {
-//                 // If the value is an object, add a header row and recursively render its children
-//                 rows.push(
-//                     <tr key={parentKey + key}>
-//                         <th colSpan="2">{parentKey + key}</th>
-//                     </tr>
-//                 );
-//                 rows.push(...renderTableRows(value, `${parentKey}${key}.`));
-//             } else {
-//                 // For primitive values (number, string, etc.), render directly
-//                 rows.push(
-//                     <tr key={parentKey + key}>
-//                         <td>{parentKey + key}</td>
-//                         <td>{value === null ? 'N/A' : value}</td>
-//                     </tr>
-//                 );
-//             }
-//         }
-//     }
-
-//     return rows;
-// };
-
-
-// const renderTableRows = (data, parentKey = '') => {
-//     const rows = [];
-
-//     for (const key in data) {
-//         if (data.hasOwnProperty(key)) {
-//             const value = data[key];
-
-//             if (Array.isArray(value)) {
-//                 rows.push(
-//                     <tr key={parentKey + key}>
-//                         <td>{parentKey + key}</td>
-//                         <td>{value.map((item) => (item === null ? 'N/A' : item)).join(', ')}</td>
-//                     </tr>
-//                 );
-//             } else if (typeof value === 'object' && value !== null) {
-//                 // **for cost_estimation_table:**
-//                 if (parentKey === 'cost_results.cost_estimation_table.') {
-//                     // If it's the cost_estimation_table, iterate over the array
-//                     return value.map((item, index) => (
-//                         <React.Fragment key={index}>
-//                             {Object.entries(item).map(([subKey, subValue]) => (
-//                                 <tr key={`${parentKey}${index}.${subKey}`}>
-//                                     <td>{subKey}</td>
-//                                     <td>{subValue}</td>
-//                                 </tr>
-//                             ))}
-//                         </React.Fragment>
-//                     ));
-//                 } else {
-//                     //other nested objects
-//                     rows.push(
-//                         <tr key={parentKey + key}>
-//                             <th colSpan="2">{parentKey + key}</th>
-//                         </tr>
-//                     );
-//                     rows.push(...renderTableRows(value, `${key}.`));
-//                 }
-//             } else {
-//                 rows.push(
-//                     <tr key={parentKey + key}>
-//                         <td>{parentKey + key}</td>
-//                         <td>{value === null ? 'N/A' : value}</td>
-//                     </tr>
-//                 );
-//             }
-//         }
-//     }
-
-//     return rows;
-// };
 
 
 export default InputForm;
