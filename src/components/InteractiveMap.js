@@ -1,5 +1,6 @@
 import React from 'react';
-import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents, GeoJSON } from 'react-leaflet';
+import geojsonData from '../assets/Extent_LTA.json'
 
 const LocationMarker = ({ setCoordinates }) => {
     useMapEvents({
@@ -19,8 +20,10 @@ const InteractiveMap = ({ setCoordinates }) => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             <LocationMarker setCoordinates={setCoordinates} />
+            <GeoJSON data={geojsonData} style={{ color: 'blue', weight: 2 }} />
         </MapContainer>
     );
 };
 
 export default InteractiveMap;
+//
