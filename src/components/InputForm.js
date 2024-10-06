@@ -47,6 +47,9 @@ const InputForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        setResponseData(null);
+
         const data = {
             coordinates: coordinates,
             crs_type: "wgs84",
