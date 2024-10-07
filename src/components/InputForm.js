@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import InteractiveMap from './InteractiveMap';
-
 import jsPDF from 'jspdf';
 import 'jspdf-autotable'
 import * as XLSX from 'xlsx';
+
+import InteractiveMap from './InteractiveMap';
+import ResultDisplay from './ResultDisplay';
 
 const InputForm = () => {
     const [coordinates, setCoordinates] = useState([-38.1950, 146.5400]);
@@ -18,12 +19,14 @@ const InputForm = () => {
         safety_margin: 25,
 
     });
-
+    
     const [isProductionPump, setIsProductionPump] = useState(true);
 
     const [responseData, setResponseData] = useState(null);
 
     const [error, setError] = useState(null);
+
+    const mapRef = useRef(null);
 
     const labels = {
         required_flow_rate: "Required flow rate (m³/s)",
@@ -127,37 +130,42 @@ const InputForm = () => {
     };
 
 
-
-    const downloadPDF = () => {
+    const downloadPDF = async() => {
         const doc = new jsPDF();
-
         const margin = 10;
         const lineHeight = 10;
         let yPosition = margin;
 
-        const installationResults = flattenResponseData(responseData);
-
-
+        //Title
         doc.setFontSize(18);
         doc.text("Wellbore Results", margin, yPosition);
         yPosition += lineHeight;
+
+        //insert image here
+        const width = 600;
+        const height = 400;
+        const imgWidth = 180; 
+        const imgHeight = (imgWidth * height) / width;
+
 
 
         doc.setFontSize(15);
         doc.text("Installation Results", margin, yPosition);
         yPosition += lineHeight;
 
-
+        const installationResults = flattenResponseData(responseData);
+        
+        // Numeric results
         const installationData = Object.keys(installationResults)
-        .filter(key => !Array.isArray(installationResults[key]))
-        .map(key => [`${key}: ${installationResults[key]}`]);
+            .filter(key => !Array.isArray(installationResults[key]))
+            .map(key => [`${key}: ${installationResults[key]}`]);
         doc.autoTable({
             body: installationData,
             startY: yPosition,
-            margin: { top: 10 },
+            margin: { top: lineHeight },
             theme: 'grid',
         });
-        yPosition = doc.autoTable.previous.finalY + 10;
+        yPosition = doc.autoTable.previous.finalY + lineHeight;
 
         // Casing Stage Table
         doc.setFontSize(15);
@@ -176,12 +184,10 @@ const InputForm = () => {
             head: [['Stage', 'Top (m)', 'Bottom (m)', 'Casing (m)', 'Drill Bit (m)']],
             body: casingStageData,
             startY: yPosition,
-            margin: { top: 10 },
+            margin: { top: lineHeight },
             theme: 'grid',
         });
-
-
-        yPosition = doc.autoTable.previous.finalY + 10; 
+        yPosition = doc.autoTable.previous.finalY + lineHeight; 
 
         // Cost Breakdown
         doc.setFontSize(15);
@@ -200,7 +206,7 @@ const InputForm = () => {
             head: [['Stage', 'Component', 'Low (AUD)', 'Base (AUD)', 'High (AUD)']],
             body: costEstimationData,
             startY: yPosition,
-            margin: { top: 10 },
+            margin: { top: lineHeight },
             theme: 'grid',
         });
   
@@ -284,10 +290,14 @@ const InputForm = () => {
     return (
         <>
             <div>
-                <div class="map-wrapper">
-                    <InteractiveMap setCoordinates={setCoordinates} />
+                <div id='map-container'>
+                <div className="map-wrapper">
+                    <InteractiveMap 
+                    setCoordinates={setCoordinates} 
+                    mapRef={mapRef}/>
                 </div>
                 <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
+                </div>
                 <form onSubmit={handleSubmit}>
                     {Object.keys(inputValues).map((key) => (
                         <div key={key} className="form-group">
@@ -348,75 +358,6 @@ const InputForm = () => {
 }
 
 
-const ResultDisplay = ({ flattenedData }) => {
-    return (
-        <div>
-
-            <h3>Installation Results</h3>
-            <table>
-                <tbody>
-                    {Object.keys(flattenedData).filter(key => !Array.isArray(flattenedData[key])).map((key, index) => (
-                        <tr key={index}>
-                            <td>{key}</td>
-                            <td>{flattenedData[key]}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-
-            <h3>Casing Stage Table</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Stage</th>
-                        <th>Top</th>
-                        <th>Bottom</th>
-                        <th>Casing</th>
-                        <th>Drill Bit</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {flattenedData.casing_stage_table.map((stage, index) => (
-                        <tr key={index}>
-                            <td>{stage.stage}</td>
-                            <td>{stage.top}</td>
-                            <td>{stage.bottom}</td>
-                            <td>{stage.casing}</td>
-                            <td>{stage.drill_bit}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-
-
-            <h3>Cost Breakdown</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Stage</th>
-                        <th>Component</th>
-                        <th>Low</th>
-                        <th>Base</th>
-                        <th>High</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {flattenedData.cost_estimation_table.map((item, index) => (
-                        <tr key={index}>
-                            <td>{item.stage}</td>
-                            <td>{item.component}</td>
-                            <td>{item.low}</td>
-                            <td>{item.base}</td>
-                            <td>{item.high}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-};
 
 
 export default InputForm;
