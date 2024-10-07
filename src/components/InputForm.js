@@ -72,7 +72,12 @@ const InputForm = () => {
             setError(null);
         } catch (error) {
             console.log(error);
-            setError(error.message);
+            if (error.response && error.response.data) {
+                const { message, details } = error.response.data;
+                setError(`${message} ${details?.message ? `- ${details.message}` : ''}`);
+            } else {
+                setError(error.message);
+            }
             setResponseData(null);
         }
     }
@@ -93,7 +98,8 @@ const InputForm = () => {
         const installationResults = data.data.installation_results;
         for (const key in installationResults) {
             if (typeof installationResults[key] !== 'object' || installationResults[key] === null) {
-                flattenedData[key] = installationResults[key];
+                let val = installationResults[key];
+                flattenedData[key+"(m)"] = Number.isInteger(val)? val : Number(val.toPrecision(4)); 
             }
         }
 
@@ -144,7 +150,7 @@ const InputForm = () => {
 
         const installationData = Object.keys(installationResults)
         .filter(key => !Array.isArray(installationResults[key]))
-        .map(key => [`${key}: ${installationResults[key]} (m)`]);
+        .map(key => [`${key}: ${installationResults[key]}`]);
         doc.autoTable({
             body: installationData,
             startY: yPosition,
