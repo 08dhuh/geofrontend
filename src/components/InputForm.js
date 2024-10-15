@@ -19,7 +19,7 @@ const InputForm = () => {
         safety_margin: 25,
 
     });
-    
+
     const [isProductionPump, setIsProductionPump] = useState(true);
 
     const [responseData, setResponseData] = useState(null);
@@ -77,7 +77,7 @@ const InputForm = () => {
             console.log(error);
             if (error.response && error.response.data) {
                 const { message, details } = error.response.data;
-                setError(`${message} ${details?.message ? `- ${details.message}` : ''}`);
+                setError(`${message} - ${details}`);
             } else {
                 setError(error.message);
             }
@@ -102,9 +102,16 @@ const InputForm = () => {
         for (const key in installationResults) {
             if (typeof installationResults[key] !== 'object' || installationResults[key] === null) {
                 let val = installationResults[key];
-                flattenedData[key+"(m)"] = Number.isInteger(val)? val : Number(val.toPrecision(4)); 
+                flattenedData[key + "(m)"] = Number.isInteger(val) ? val : Number(val.toPrecision(4));
             }
         }
+        // aquifer_table
+        const aquiferTableData = installationResults.aquifer_table;
+        flattenedData['aquifer_table'] = aquiferTableData.aquifer_layer.map((layer, index) => ({
+            aquifer_layer: layer,
+            is_aquifer: aquiferTableData.is_aquifer[index],
+            depth_to_base: aquiferTableData.depth_to_base[index],
+        }));
 
         //casing_stage_table
         const casingStagesData = installationResults.casing_stage_table;
@@ -130,32 +137,64 @@ const InputForm = () => {
     };
 
 
-    const downloadPDF = async() => {
+    const downloadPDF = async () => {
         const doc = new jsPDF();
+        //set text parameters
         const margin = 10;
         const lineHeight = 10;
+        const pageWidth = doc.internal.pageSize.width / 2
+
         let yPosition = margin;
+
+        //image parameters
+        const width = 600;
+        const height = 400;
+        const imgWidth = 180;
+        const imgHeight = (imgWidth * height) / width;
+
+        //flatten and assign response object to a constant
+        const installationResults = flattenResponseData(responseData);
 
         //Title
         doc.setFontSize(18);
-        doc.text("Wellbore Results", margin, yPosition);
+        doc.text("Wellbore Infrastructure and Installation Cost Report", pageWidth, yPosition, { align: 'center' });
         yPosition += lineHeight;
 
         //insert image here
-        const width = 600;
-        const height = 400;
-        const imgWidth = 180; 
-        const imgHeight = (imgWidth * height) / width;
 
 
+        //location coordinates
+        doc.setFontSize(12);
 
+        doc.text(`Location (EPSG:4326 Coordinates): [${coordinates}]`,
+            pageWidth,
+            yPosition,
+            { align: 'center' }
+        );
+        yPosition += lineHeight;
+
+        //groundwater layer table
         doc.setFontSize(15);
+        doc.text("Groundwater layers", margin, yPosition);
+        yPosition += lineHeight;
+
+        const aquiferLayers = installationResults.aquifer_table.map(layer => [
+            layer.aquifer_layer,
+            layer.depth_to_base
+        ]);
+        doc.autoTable({
+            head: [['Aquifer/Aquitard', 'Depth to base(m)']],
+            body: aquiferLayers,
+            startY: yPosition,
+            margin: { top: lineHeight },
+            theme: 'grid',
+        });
+        yPosition = doc.autoTable.previous.finalY + lineHeight;
+
+        // Numeric results
         doc.text("Installation Results", margin, yPosition);
         yPosition += lineHeight;
 
-        const installationResults = flattenResponseData(responseData);
-        
-        // Numeric results
         const installationData = Object.keys(installationResults)
             .filter(key => !Array.isArray(installationResults[key]))
             .map(key => [`${key}: ${installationResults[key]}`]);
@@ -187,7 +226,7 @@ const InputForm = () => {
             margin: { top: lineHeight },
             theme: 'grid',
         });
-        yPosition = doc.autoTable.previous.finalY + lineHeight; 
+        yPosition = doc.autoTable.previous.finalY + lineHeight;
 
         // Cost Breakdown
         doc.setFontSize(15);
@@ -209,13 +248,19 @@ const InputForm = () => {
             margin: { top: lineHeight },
             theme: 'grid',
         });
-  
+
+        //save the result
         doc.save('response_data.pdf');
     };
 
     const downloadExcel = () => {
         const installationResults = flattenResponseData(responseData);
-    
+
+        const aquiferLayers = installationResults.aquifer_table.map(layer => ({
+            "Groundwater Layer": layer.aquifer_layer,
+            "Depth to Base(m)": layer.depth_to_base
+        }));
+
 
         const installationData = Object.keys(installationResults)
             .filter(key => !Array.isArray(installationResults[key]))
@@ -247,12 +292,16 @@ const InputForm = () => {
 
         const installationWorksheet = XLSX.utils.json_to_sheet(installationData);
         XLSX.utils.book_append_sheet(workbook, installationWorksheet, "Installation Results");
-    
+
         const casingStageWorksheet = XLSX.utils.json_to_sheet(casingStageData);
         XLSX.utils.book_append_sheet(workbook, casingStageWorksheet, "Casing Stage Table");
-    
+
         const costEstimationWorksheet = XLSX.utils.json_to_sheet(costEstimationData);
         XLSX.utils.book_append_sheet(workbook, costEstimationWorksheet, "Cost Breakdown");
+
+        const aquiferWorksheet = XLSX.utils.json_to_sheet(aquiferLayers);
+        XLSX.utils.book_append_sheet(workbook, aquiferWorksheet, "Groundwater Layers");
+
 
         XLSX.writeFile(workbook, 'response_data.xlsx');
     };
@@ -291,12 +340,12 @@ const InputForm = () => {
         <>
             <div>
                 <div id='map-container'>
-                <div className="map-wrapper">
-                    <InteractiveMap 
-                    setCoordinates={setCoordinates} 
-                    mapRef={mapRef}/>
-                </div>
-                <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
+                    <div className="map-wrapper">
+                        <InteractiveMap
+                            setCoordinates={setCoordinates}
+                            mapRef={mapRef} />
+                    </div>
+                    <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
                 </div>
                 <form onSubmit={handleSubmit}>
                     {Object.keys(inputValues).map((key) => (
@@ -323,10 +372,10 @@ const InputForm = () => {
             </div>
             <div>
                 {responseData && (
-                        <div className="response-data">
-                            <h3>Total Cost Table(AUD)</h3>
-                            {renderTotalCostTable()}
-                        
+                    <div className="response-data">
+                        <h3>Total Cost Table(AUD)</h3>
+                        {renderTotalCostTable()}
+
 
                         <div className="buttons">
                             <h4>Download detailed cost breakdown and wellbore specifications:</h4>
@@ -349,6 +398,7 @@ const InputForm = () => {
                 {error && (
                     <div className="error-message">
                         <p>{error}</p>
+
                     </div>
                 )}
             </div>
