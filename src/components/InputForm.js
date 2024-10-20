@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable'
 import * as XLSX from 'xlsx';
+import leafletImage from 'leaflet-image';
+
 
 import InteractiveMap from './InteractiveMap';
 import ResultDisplay from './ResultDisplay';
@@ -26,7 +28,7 @@ const InputForm = () => {
 
     const [error, setError] = useState(null);
 
-    const mapRef = useRef(null);
+    const [mapInstance, setMapInstance] = useState(null);
 
     const labels = {
         required_flow_rate: "Required flow rate (m³/s)",
@@ -136,6 +138,20 @@ const InputForm = () => {
         return flattenedData;
     };
 
+    const captureMapImage = () => {
+        return new Promise((resolve, reject) => {
+            if (mapInstance) {
+                leafletImage(mapInstance, (err, canvas) => {
+                    if (err) return reject(err);
+                    const imgData = canvas.toDataURL('image/png');
+                    resolve(imgData);
+                });
+            } else {
+                reject(new Error("Map instance is not available."));
+            }
+        });
+    };
+
 
     const downloadPDF = async () => {
         const doc = new jsPDF();
@@ -143,7 +159,6 @@ const InputForm = () => {
         const margin = 10;
         const lineHeight = 10;
         const pageWidth = doc.internal.pageSize.width / 2
-
         let yPosition = margin;
 
         //image parameters
@@ -160,18 +175,25 @@ const InputForm = () => {
         doc.text("Wellbore Infrastructure and Installation Cost Report", pageWidth, yPosition, { align: 'center' });
         yPosition += lineHeight;
 
-        //insert image here
-
-
         //location coordinates
         doc.setFontSize(12);
-
         doc.text(`Location (EPSG:4326 Coordinates): [${coordinates}]`,
             pageWidth,
             yPosition,
             { align: 'center' }
         );
         yPosition += lineHeight;
+
+        //insert image here
+        try {
+            const mapImage = await captureMapImage();
+            doc.addImage(mapImage, 'PNG', margin, yPosition, imgWidth, imgHeight);
+            yPosition += imgHeight+lineHeight;
+        } catch (error) {
+            console.error("Error capturing map image:", error);
+        }
+
+
 
         //groundwater layer table
         doc.setFontSize(15);
@@ -343,7 +365,7 @@ const InputForm = () => {
                     <div className="map-wrapper">
                         <InteractiveMap
                             setCoordinates={setCoordinates}
-                            mapRef={mapRef} />
+                            onMapCreated={setMapInstance} />
                     </div>
                     <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
                 </div>

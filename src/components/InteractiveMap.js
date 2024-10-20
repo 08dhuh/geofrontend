@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, useMapEvents, GeoJSON, Marker,Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, useMapEvents, GeoJSON, Marker, Popup } from 'react-leaflet';
 import geojsonData from '../assets/Extent_LTA.json'
 
 const LocationMarker = ({ setCoordinates, markerPosition, setMarkerPosition }) => {
@@ -15,26 +15,27 @@ const LocationMarker = ({ setCoordinates, markerPosition, setMarkerPosition }) =
     });
     return markerPosition ? (<Marker position={markerPosition}>
         <Popup>{`${markerPosition[0].toFixed(5)}, ${markerPosition[1].toFixed(5)}`}</Popup>
-    </Marker>): null;
+    </Marker>) : null;
 };
 
-const InteractiveMap = ({ setCoordinates, mapRef }) => {
+const InteractiveMap = ({ setCoordinates, onMapCreated  }) => {
     const [markerPosition, setMarkerPosition] = useState(null);
     return (
-        <MapContainer 
-        center={[-38.1950, 146.5400]} 
-        zoom={13} 
-        className="leaflet-container"
-        ref={mapRef}
+        <MapContainer
+            center={[-38.1950, 146.5400]}
+            zoom={13}
+            className="leaflet-container"
+            // ref={mapRef}
+            whenReady={(e) => onMapCreated(e.target)}
         >
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            <LocationMarker 
-            setCoordinates={setCoordinates} 
-            markerPosition={markerPosition}
-            setMarkerPosition={setMarkerPosition}
+            <LocationMarker
+                setCoordinates={setCoordinates}
+                markerPosition={markerPosition}
+                setMarkerPosition={setMarkerPosition}
             />
             <GeoJSON data={geojsonData} style={{ color: 'blue', weight: 2 }} />
         </MapContainer>
