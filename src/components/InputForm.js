@@ -1,44 +1,30 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable'
-import * as XLSX from 'xlsx';
-import leafletImage from 'leaflet-image';
 
+import 'jspdf-autotable'
+
+import { useGlobalConfig } from '../GlobalConfigContext';
 
 import InteractiveMap from './InteractiveMap';
 import ResultDisplay from './ResultDisplay';
+import DownloadButtons from './DownloadButtons';
+
+import { DEFAULT_INPUT_VALUES } from '../constants';
 
 const InputForm = () => {
-    const [coordinates, setCoordinates] = useState([-38.1950, 146.5400]);
-    const [inputValues, setInputValues] = useState({
-        required_flow_rate: 4320,
-        hydraulic_conductivity: 5,
-        average_porosity: 0.25,
-        bore_lifetime_year: 30,
-        long_term_decline_rate: 1,
-        allowable_drawdown: 25,
-        safety_margin: 25,
-
-    });
-
+    //inputs
+    const [inputValues, setInputValues] = useState(DEFAULT_INPUT_VALUES);
     const [isProductionPump, setIsProductionPump] = useState(true);
 
-    const [responseData, setResponseData] = useState(null);
 
     const [error, setError] = useState(null);
 
-    const [mapInstance, setMapInstance] = useState(null);
 
-    const labels = {
-        required_flow_rate: "Required flow rate (m³/s)",
-        hydraulic_conductivity: "Aquifer hydraulic conductivity (m/day)",
-        average_porosity: "Average reservoir porosity (0 - 1)",
-        bore_lifetime_year: "Bore/project lifetime (years)",
-        long_term_decline_rate: "Long-term decline rate in water level (m/year)",
-        allowable_drawdown: "Allowable drawdown (m)",
-        safety_margin: "Safety margin (m)",
-    };
+    const { coordinates,
+        labels,
+        responseData,
+        setResponseData,
+        flattenResponseData } = useGlobalConfig();
 
 
     const handleInputChange = e => {
@@ -87,246 +73,6 @@ const InputForm = () => {
         }
     }
 
-    const casingStages = [
-        'Pre-collar',
-        'Superficial Casing',
-        'Pump Chamber Casing',
-        'Intermediate Casing',
-        'Screen Riser',
-        'Screen'
-    ];
-
-    const flattenResponseData = (data) => {
-        const flattenedData = {};
-
-        //installation results
-        const installationResults = data.data.installation_results;
-        for (const key in installationResults) {
-            if (typeof installationResults[key] !== 'object' || installationResults[key] === null) {
-                let val = installationResults[key];
-                flattenedData[key + "(m)"] = Number.isInteger(val) ? val : Number(val.toPrecision(4));
-            }
-        }
-        // aquifer_table
-        const aquiferTableData = installationResults.aquifer_table;
-        flattenedData['aquifer_table'] = aquiferTableData.aquifer_layer.map((layer, index) => ({
-            aquifer_layer: layer,
-            is_aquifer: aquiferTableData.is_aquifer[index],
-            depth_to_base: aquiferTableData.depth_to_base[index],
-        }));
-
-        //casing_stage_table
-        const casingStagesData = installationResults.casing_stage_table;
-        flattenedData['casing_stage_table'] = casingStagesData.top.map((_, index) => ({
-            stage: casingStages[index],
-            top: casingStagesData.top[index],
-            bottom: casingStagesData.bottom[index],
-            casing: casingStagesData.casing[index],
-            drill_bit: casingStagesData.drill_bit[index],
-        }));
-
-        //cost estimation table
-        const costResults = data.data.cost_results.cost_estimation_table;
-        flattenedData['cost_estimation_table'] = costResults.map(item => ({
-            stage: item.stage,
-            component: item.components,
-            low: Math.round(item.low),
-            base: Math.round(item.base),
-            high: Math.round(item.high),
-        }));
-
-        return flattenedData;
-    };
-
-    const captureMapImage = () => {
-        return new Promise((resolve, reject) => {
-            if (mapInstance) {
-                leafletImage(mapInstance, (err, canvas) => {
-                    if (err) return reject(err);
-                    const imgData = canvas.toDataURL('image/png');
-                    resolve(imgData);
-                });
-            } else {
-                reject(new Error("Map instance is not available."));
-            }
-        });
-    };
-
-
-    const downloadPDF = async () => {
-        const doc = new jsPDF();
-        //set text parameters
-        const margin = 10;
-        const lineHeight = 10;
-        const pageWidth = doc.internal.pageSize.width / 2
-        let yPosition = margin;
-
-        //image parameters
-        const width = 600;
-        const height = 400;
-        const imgWidth = 180;
-        const imgHeight = (imgWidth * height) / width;
-
-        //flatten and assign response object to a constant
-        const installationResults = flattenResponseData(responseData);
-
-        //Title
-        doc.setFontSize(18);
-        doc.text("Wellbore Infrastructure and Installation Cost Report", pageWidth, yPosition, { align: 'center' });
-        yPosition += lineHeight;
-
-        //location coordinates
-        doc.setFontSize(12);
-        doc.text(`Location (EPSG:4326 Coordinates): [${coordinates}]`,
-            pageWidth,
-            yPosition,
-            { align: 'center' }
-        );
-        yPosition += lineHeight;
-
-        //insert image here
-        try {
-            const mapImage = await captureMapImage();
-            doc.addImage(mapImage, 'PNG', margin, yPosition, imgWidth, imgHeight);
-            yPosition += imgHeight+lineHeight;
-        } catch (error) {
-            console.error("Error capturing map image:", error);
-        }
-
-
-
-        //groundwater layer table
-        doc.setFontSize(15);
-        doc.text("Groundwater layers", margin, yPosition);
-        yPosition += lineHeight;
-
-        const aquiferLayers = installationResults.aquifer_table.map(layer => [
-            layer.aquifer_layer,
-            layer.depth_to_base
-        ]);
-        doc.autoTable({
-            head: [['Aquifer/Aquitard', 'Depth to base(m)']],
-            body: aquiferLayers,
-            startY: yPosition,
-            margin: { top: lineHeight },
-            theme: 'grid',
-        });
-        yPosition = doc.autoTable.previous.finalY + lineHeight;
-
-        // Numeric results
-        doc.text("Installation Results", margin, yPosition);
-        yPosition += lineHeight;
-
-        const installationData = Object.keys(installationResults)
-            .filter(key => !Array.isArray(installationResults[key]))
-            .map(key => [`${key}: ${installationResults[key]}`]);
-        doc.autoTable({
-            body: installationData,
-            startY: yPosition,
-            margin: { top: lineHeight },
-            theme: 'grid',
-        });
-        yPosition = doc.autoTable.previous.finalY + lineHeight;
-
-        // Casing Stage Table
-        doc.setFontSize(15);
-        doc.text("Casing Stage Table", margin, yPosition);
-        yPosition += lineHeight;
-
-        const casingStageData = installationResults.casing_stage_table.map(stage => [
-            stage.stage,
-            stage.top,
-            stage.bottom,
-            stage.casing,
-            stage.drill_bit,
-        ]);
-
-        doc.autoTable({
-            head: [['Stage', 'Top (m)', 'Bottom (m)', 'Casing (m)', 'Drill Bit (m)']],
-            body: casingStageData,
-            startY: yPosition,
-            margin: { top: lineHeight },
-            theme: 'grid',
-        });
-        yPosition = doc.autoTable.previous.finalY + lineHeight;
-
-        // Cost Breakdown
-        doc.setFontSize(15);
-        doc.text("Cost Breakdown", margin, yPosition);
-        yPosition += lineHeight;
-
-        const costEstimationData = installationResults.cost_estimation_table.map(item => [
-            item.stage,
-            item.component,
-            item.low,
-            item.base,
-            item.high,
-        ]);
-
-        doc.autoTable({
-            head: [['Stage', 'Component', 'Low (AUD)', 'Base (AUD)', 'High (AUD)']],
-            body: costEstimationData,
-            startY: yPosition,
-            margin: { top: lineHeight },
-            theme: 'grid',
-        });
-
-        //save the result
-        doc.save('response_data.pdf');
-    };
-
-    const downloadExcel = () => {
-        const installationResults = flattenResponseData(responseData);
-
-        const aquiferLayers = installationResults.aquifer_table.map(layer => ({
-            "Groundwater Layer": layer.aquifer_layer,
-            "Depth to Base(m)": layer.depth_to_base
-        }));
-
-
-        const installationData = Object.keys(installationResults)
-            .filter(key => !Array.isArray(installationResults[key]))
-            .map(key => ({
-                Parameter: key,
-                Value: installationResults[key]
-            }));
-
-
-        const casingStageData = installationResults.casing_stage_table.map(stage => ({
-            Stage: stage.stage,
-            Top: stage.top,
-            Bottom: stage.bottom,
-            Casing: stage.casing,
-            Drill_Bit: stage.drill_bit
-        }));
-
-
-        const costEstimationData = installationResults.cost_estimation_table.map(item => ({
-            Stage: item.stage,
-            Component: item.component,
-            Low: item.low,
-            Base: item.base,
-            High: item.high
-        }));
-
-
-        const workbook = XLSX.utils.book_new();
-
-        const installationWorksheet = XLSX.utils.json_to_sheet(installationData);
-        XLSX.utils.book_append_sheet(workbook, installationWorksheet, "Installation Results");
-
-        const casingStageWorksheet = XLSX.utils.json_to_sheet(casingStageData);
-        XLSX.utils.book_append_sheet(workbook, casingStageWorksheet, "Casing Stage Table");
-
-        const costEstimationWorksheet = XLSX.utils.json_to_sheet(costEstimationData);
-        XLSX.utils.book_append_sheet(workbook, costEstimationWorksheet, "Cost Breakdown");
-
-        const aquiferWorksheet = XLSX.utils.json_to_sheet(aquiferLayers);
-        XLSX.utils.book_append_sheet(workbook, aquiferWorksheet, "Groundwater Layers");
-
-
-        XLSX.writeFile(workbook, 'response_data.xlsx');
-    };
 
     const renderTotalCostTable = () => {
         if (!responseData) return null;
@@ -364,8 +110,7 @@ const InputForm = () => {
                 <div id='map-container'>
                     <div className="map-wrapper">
                         <InteractiveMap
-                            setCoordinates={setCoordinates}
-                            onMapCreated={setMapInstance} />
+                        />
                     </div>
                     <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
                 </div>
@@ -399,11 +144,7 @@ const InputForm = () => {
                         {renderTotalCostTable()}
 
 
-                        <div className="buttons">
-                            <h4>Download detailed cost breakdown and wellbore specifications:</h4>
-                            <button onClick={downloadPDF}>Download as PDF</button>
-                            <button onClick={downloadExcel}>Download as Excel</button>
-                        </div>
+                        <DownloadButtons />
 
                     </div>
                 )}

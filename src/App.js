@@ -1,4 +1,5 @@
 import './App.css';
+import { GlobalConfigProvider } from './GlobalConfigContext';
 import InputForm from './components/InputForm';
 
 function App() {
@@ -6,7 +7,9 @@ function App() {
     <div id="root" className="app">
       <h1 style={{ marginBottom: '0px' }}>Wellbore Cost Estimation & Specifications</h1>
       <p><strong>Click on the interactive map to analyze wellbore cost and specifications for the selected location.</strong></p>
-        <InputForm />
+        <GlobalConfigProvider>
+            <InputForm />
+        </GlobalConfigProvider>
 
     </div>
   );

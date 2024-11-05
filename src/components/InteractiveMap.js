@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, useMapEvents, GeoJSON, Marker, Popup } from 'react-leaflet';
 import geojsonData from '../assets/Extent_LTA.json'
+import { useGlobalConfig } from '../GlobalConfigContext';
 
 const LocationMarker = ({ setCoordinates, markerPosition, setMarkerPosition }) => {
     useMapEvents({
@@ -18,7 +19,9 @@ const LocationMarker = ({ setCoordinates, markerPosition, setMarkerPosition }) =
     </Marker>) : null;
 };
 
-const InteractiveMap = ({ setCoordinates, onMapCreated  }) => {
+const InteractiveMap = () => {
+
+    const { setCoordinates, setMapInstance } = useGlobalConfig();
     const [markerPosition, setMarkerPosition] = useState(null);
     return (
         <MapContainer
@@ -26,7 +29,8 @@ const InteractiveMap = ({ setCoordinates, onMapCreated  }) => {
             zoom={13}
             className="leaflet-container"
             // ref={mapRef}
-            whenReady={(e) => onMapCreated(e.target)}
+            //whenReady={(e) => onMapCreated(e.target)}
+            whenReady={(e) => setMapInstance(e.target)}
         >
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
