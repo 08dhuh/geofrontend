@@ -1,3 +1,5 @@
+export const DEFAULT_COORDINATES = [-38.1950, 146.5400];
+
 //Labels for form fields
 export const LABELS = {
     required_flow_rate: "Required flow rate (m³/s)",

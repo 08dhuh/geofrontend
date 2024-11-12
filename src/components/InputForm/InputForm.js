@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-import 'jspdf-autotable'
+//import 'jspdf-autotable'
 
-import { useGlobalConfig } from '../GlobalConfigContext';
+import { useGlobalConfig } from '../../context/GlobalConfigContext';
 
-import InteractiveMap from './InteractiveMap';
-import ResultDisplay from './ResultDisplay';
-import DownloadButtons from './DownloadButtons';
+import InteractiveMap from '../InteractiveMap/InteractiveMap';
+import ResultDisplay from '../OutputDisplay/ResultDisplay';
+import DownloadButtons from '../DownloadButtons/DownloadButtons';
 
-import { DEFAULT_INPUT_VALUES } from '../constants';
+import { DEFAULT_INPUT_VALUES } from '../../utils/constants';
 
 const InputForm = () => {
     //inputs
@@ -58,7 +58,7 @@ const InputForm = () => {
             is_production_pump: isProductionPump.toString(),
         };
         try {
-            const response = await axios.post('http://localhost:8000/api/calculate-wellbore', data);
+            const response = await axios.post(`${process.env.REACT_APP_GEOBACKEND_URL}/api/calculate-wellbore`, data);
             setResponseData(response.data);
             setError(null);
         } catch (error) {

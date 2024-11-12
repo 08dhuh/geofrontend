@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState } from 'react';
-import { LABELS, CASING_STAGES } from './constants';
-import { flattenResponseData } from './components/Utils';
+import { LABELS, CASING_STAGES, DEFAULT_COORDINATES } from '../utils/constants';
+import { flattenResponseData } from '../utils/Utils';
 
 const GlobalConfigContext = createContext();
 
 export const GlobalConfigProvider = ({ children }) => {
     const [responseData, setResponseData] = useState(null);
     const [mapInstance, setMapInstance] = useState(null);
-    const [coordinates, setCoordinates] = useState([-38.1950, 146.5400]);
+    const [coordinates, setCoordinates] = useState(DEFAULT_COORDINATES);
 
     const casingStages = CASING_STAGES;
     const labels = LABELS;

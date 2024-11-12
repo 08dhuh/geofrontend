@@ -4,7 +4,7 @@ import 'jspdf-autotable'
 import * as XLSX from 'xlsx';
 
 
-import { useGlobalConfig } from '../GlobalConfigContext';
+import { useGlobalConfig } from '../../context/GlobalConfigContext';
 import leafletImage from 'leaflet-image';
 
 export const DownloadButtons = () => {

@@ -1,6 +1,6 @@
 import './App.css';
-import { GlobalConfigProvider } from './GlobalConfigContext';
-import InputForm from './components/InputForm';
+import { GlobalConfigProvider } from './context/GlobalConfigContext';
+import InputForm from './components/InputForm/InputForm';
 
 function App() {
   return (

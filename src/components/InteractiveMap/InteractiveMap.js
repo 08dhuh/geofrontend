@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, useMapEvents, GeoJSON, Marker, Popup } from 'react-leaflet';
-import geojsonData from '../assets/Extent_LTA.json'
-import { useGlobalConfig } from '../GlobalConfigContext';
+import geojsonData from './assets/Extent_LTA.json'
+import { useGlobalConfig } from '../../context/GlobalConfigContext';
 
 const LocationMarker = ({ setCoordinates, markerPosition, setMarkerPosition }) => {
     useMapEvents({

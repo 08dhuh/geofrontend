@@ -1,4 +1,4 @@
-import { CASING_STAGES as casingStages} from "../constants";
+import { CASING_STAGES as casingStages} from "./constants";
 
 export const flattenResponseData = (data) => {
     const flattenedData = {};
