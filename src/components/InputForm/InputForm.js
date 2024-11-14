@@ -1,45 +1,24 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-
-//import 'jspdf-autotable'
+import React from 'react';
 
 import { useGlobalConfig } from '../../context/GlobalConfigContext';
+//hooks
+import useGeobackendCalculationApi from '../../hooks/useGeobackendCalculationApi';
+import useInputForm from '../../hooks/useInputForm';
 
-import InteractiveMap from '../InteractiveMap/InteractiveMap';
-import ResultDisplay from '../OutputDisplay/ResultDisplay';
-import DownloadButtons from '../DownloadButtons/DownloadButtons';
-
-import { DEFAULT_INPUT_VALUES } from '../../utils/constants';
 
 const InputForm = () => {
     //inputs
-    const [inputValues, setInputValues] = useState(DEFAULT_INPUT_VALUES);
-    const [isProductionPump, setIsProductionPump] = useState(true);
-
-
-    const [error, setError] = useState(null);
+    const { inputValues, isProductionPump, handleInputChange, handleToggleChange } = useInputForm();
+    const { submitForm } = useGeobackendCalculationApi();
 
 
     const { coordinates,
-        labels,
-        responseData,
-        setResponseData,
-        flattenResponseData } = useGlobalConfig();
+        labels} = useGlobalConfig();
 
 
-    const handleInputChange = e => {
-        const { name, value } = e.target;
-        setInputValues({ ...inputValues, [name]: value });
-    };
-
-    const handleToggleChange = () => {
-        setIsProductionPump(!isProductionPump);
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        setResponseData(null);
 
         const data = {
             coordinates: coordinates,
@@ -57,63 +36,14 @@ const InputForm = () => {
             },
             is_production_pump: isProductionPump.toString(),
         };
-        try {
-            const response = await axios.post(`${process.env.REACT_APP_GEOBACKEND_URL}/api/calculate-wellbore`, data);
-            setResponseData(response.data);
-            setError(null);
-        } catch (error) {
-            console.log(error);
-            if (error.response && error.response.data) {
-                const { message, details } = error.response.data;
-                setError(`${message} - ${details}`);
-            } else {
-                setError(error.message);
-            }
-            setResponseData(null);
-        }
+
+        submitForm(data);
     }
 
-
-    const renderTotalCostTable = () => {
-        if (!responseData) return null;
-
-        const totalCostTable = responseData.data.cost_results.total_cost_table;
-        const stages = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
-        return (
-            <table>
-                <thead>
-                    <tr>
-                        <th>Stage</th>
-                        <th>Low</th>
-                        <th>Base</th>
-                        <th>High</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {stages.map((stage, index) => (
-                        <tr key={stage}>
-                            <td>{stage}</td>
-                            <td>{Math.round(totalCostTable.low[index])}</td>
-                            <td>{Math.round(totalCostTable.base[index])}</td>
-                            <td>{Math.round(totalCostTable.high[index])}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        );
-
-    };
 
     return (
         <>
             <div>
-                <div id='map-container'>
-                    <div className="map-wrapper">
-                        <InteractiveMap
-                        />
-                    </div>
-                    <h5>Current Coordinates: {coordinates[0]}, {coordinates[1]}</h5>
-                </div>
                 <form onSubmit={handleSubmit}>
                     {Object.keys(inputValues).map((key) => (
                         <div key={key} className="form-group">
@@ -136,34 +66,6 @@ const InputForm = () => {
                     </div>
                     <button type="submit">Submit</button>
                 </form>
-            </div>
-            <div>
-                {responseData && (
-                    <div className="response-data">
-                        <h3>Total Cost Table(AUD)</h3>
-                        {renderTotalCostTable()}
-
-
-                        <DownloadButtons />
-
-                    </div>
-                )}
-            </div>
-            <div id="result-display">
-                {responseData && (
-                    <div className="response-data">
-                        <ResultDisplay flattenedData={flattenResponseData(responseData)} />
-                    </div>
-                )}
-
-            </div>
-            <div>
-                {error && (
-                    <div className="error-message">
-                        <p>{error}</p>
-
-                    </div>
-                )}
             </div>
         </>
     );

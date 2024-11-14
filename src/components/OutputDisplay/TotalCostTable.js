@@ -1,9 +1,11 @@
+import React from 'react';
+import { COST_STAGES } from '../../utils/constants';
 
-const renderTotalCostTable = (responseData) => {
-    if (!responseData) return null;
+const TotalCostTable = ({ totalCostTable }) => {
+    if (!totalCostTable) return null;
 
-    const totalCostTable = responseData.data.cost_results.total_cost_table;
-    const stages = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
+    //const COST_STAGES = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
+
     return (
         <table>
             <thead>
@@ -15,7 +17,7 @@ const renderTotalCostTable = (responseData) => {
                 </tr>
             </thead>
             <tbody>
-                {stages.map((stage, index) => (
+                {COST_STAGES.map((stage, index) => (
                     <tr key={stage}>
                         <td>{stage}</td>
                         <td>{Math.round(totalCostTable.low[index])}</td>
@@ -26,5 +28,6 @@ const renderTotalCostTable = (responseData) => {
             </tbody>
         </table>
     );
-
 };
+
+export default TotalCostTable;

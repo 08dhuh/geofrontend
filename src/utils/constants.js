@@ -21,6 +21,8 @@ export const CASING_STAGES = [
     'Screen',
 ];
 
+export const COST_STAGES = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
+
 
 //Default form input values
 export const DEFAULT_INPUT_VALUES = {
