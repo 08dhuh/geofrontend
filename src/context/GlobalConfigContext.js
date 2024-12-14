@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { LABELS, CASING_STAGES, DEFAULT_COORDINATES } from '../utils/constants';
 import { flattenResponseData } from '../utils/Utils';
 
@@ -13,6 +13,19 @@ export const GlobalConfigProvider = ({ children }) => {
     const casingStages = CASING_STAGES;
     const labels = LABELS;
 
+    const installationResults = useMemo(() => 
+        responseData ? flattenResponseData(responseData) : null, 
+        [responseData]
+    );
+
+    const aquiferLayers = useMemo(() => 
+        installationResults?.aquifer_table?.map(layer => [
+            layer.aquifer_layer,
+            layer.depth_to_base
+        ]) || null, 
+        [installationResults]
+    );
+
     return (
         <GlobalConfigContext.Provider value={{ 
             labels,
@@ -21,7 +34,10 @@ export const GlobalConfigProvider = ({ children }) => {
             responseData, setResponseData,
             coordinates, setCoordinates,
             error, setError,
-            flattenResponseData }}>
+            //flattenResponseData,
+            installationResults,
+            aquiferLayers
+             }}>
             {children}
         </GlobalConfigContext.Provider>
     );

@@ -8,7 +8,7 @@ import { useGlobalConfig } from '../../context/GlobalConfigContext';
 import leafletImage from 'leaflet-image';
 
 export const DownloadButtons = () => {
-    const { coordinates, mapInstance, responseData, flattenResponseData } = useGlobalConfig();
+    const { coordinates, mapInstance, installationResults, aquiferLayers } = useGlobalConfig();
     const downloadPDF = async () => {
         const doc = new jsPDF();
         //set text parameters
@@ -23,7 +23,7 @@ export const DownloadButtons = () => {
         const imgWidth = 180;
         const imgHeight = (imgWidth * height) / width;
 
-        const installationResults = flattenResponseData(responseData);
+        //const installationResults = flattenResponseData(responseData);
 
         //Title
         doc.setFontSize(18);
@@ -53,10 +53,10 @@ export const DownloadButtons = () => {
         doc.text("Groundwater layers", margin, yPosition);
         yPosition += lineHeight;
 
-        const aquiferLayers = installationResults.aquifer_table.map(layer => [
-            layer.aquifer_layer,
-            layer.depth_to_base
-        ]);
+        // const aquiferLayers = installationResults.aquifer_table.map(layer => [
+        //     layer.aquifer_layer,
+        //     layer.depth_to_base
+        // ]);
         doc.autoTable({
             head: [['Aquifer/Aquitard', 'Depth to base(m)']],
             body: aquiferLayers,
@@ -129,13 +129,13 @@ export const DownloadButtons = () => {
     };
 
 
-    const downloadExcel = (responseData) => {
-        const installationResults = flattenResponseData(responseData);
+    const downloadExcel = async () => {
+        // const installationResults = flattenResponseData(responseData);
 
-        const aquiferLayers = installationResults.aquifer_table.map(layer => ({
-            "Groundwater Layer": layer.aquifer_layer,
-            "Depth to Base(m)": layer.depth_to_base
-        }));
+        // const aquiferLayers = installationResults.aquifer_table.map(layer => ({
+        //     "Groundwater Layer": layer.aquifer_layer,
+        //     "Depth to Base(m)": layer.depth_to_base
+        // }));
 
 
         const installationData = Object.keys(installationResults)

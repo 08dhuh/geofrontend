@@ -1,12 +1,14 @@
 import React from 'react';
 import TotalCostTable from './TotalCostTable';
+
 import DetailedBreakdownTable from './DetailedBreakdownTable';
 import DownloadButtons from '../DownloadButtons/DownloadButtons';
 import ErrorDisplay from './ErrorDisplay';
 import { useGlobalConfig } from '../../context/GlobalConfigContext';
 
+//entry point
 const CalculationResultDisplay = () => {
-    const { responseData, flattenResponseData } = useGlobalConfig();
+    const { responseData, installationResults, aquiferLayers } = useGlobalConfig();
     return (
         <div>
             {responseData && (
@@ -19,7 +21,7 @@ const CalculationResultDisplay = () => {
 
             {responseData && (
                 <div id="result-display" className="response-data">
-                    <DetailedBreakdownTable flattenedData={flattenResponseData(responseData)} />
+                    <DetailedBreakdownTable flattenedData={installationResults} />
                 </div>
             )}
 
