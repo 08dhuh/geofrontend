@@ -3,7 +3,6 @@ import { vaf_mapping } from '../../../utils/constants';
 
 const AquiferTable = ({ aquiferLayers }) => {
    
-
     return (
         <>
         <h3>Groundwater Layers</h3>
@@ -15,7 +14,7 @@ const AquiferTable = ({ aquiferLayers }) => {
                 </tr>
             </thead>
             <tbody>
-                {aquiferLayers.map(([layer, depth], index) => (
+                {aquiferLayers.map(({layer, depth}, index) => (
                     <tr key={index}>
                         <td>{vaf_mapping[layer] || `Unknown Layer (${layer})`}</td>
                         <td>{depth} m</td>

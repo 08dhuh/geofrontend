@@ -14,7 +14,7 @@ const CalculationResultDisplay = () => {
             {responseData && (
                 <div className="response-data">
                     <h3>Total Cost Table (AUD)</h3>
-                    <TotalCostTable totalCostTable={responseData.data.cost_results.total_cost_table} />
+                    <TotalCostTable totalCostTable={responseData.cost_results.total_cost_table} />
                     <DownloadButtons />
                 </div>
             )}

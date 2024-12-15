@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { LABELS, CASING_STAGES, DEFAULT_COORDINATES } from '../utils/constants';
-import { flattenResponseData } from '../utils/Utils';
+import { flattenAquiferData, flattenCalculationResultData } from '../utils/Utils';
 
 const GlobalConfigContext = createContext();
 
 export const GlobalConfigProvider = ({ children }) => {
     const [responseData, setResponseData] = useState(null);
+    const [aquiferData, setAquiferData] = useState(null);
     const [mapInstance, setMapInstance] = useState(null);
     const [coordinates, setCoordinates] = useState(DEFAULT_COORDINATES);
     const [error, setError] = useState(null);  
@@ -14,16 +15,13 @@ export const GlobalConfigProvider = ({ children }) => {
     const labels = LABELS;
 
     const installationResults = useMemo(() => 
-        responseData ? flattenResponseData(responseData) : null, 
+        responseData ? flattenCalculationResultData(responseData) : null, 
         [responseData]
     );
 
-    const aquiferLayers = useMemo(() => 
-        installationResults?.aquifer_table?.map(layer => [
-            layer.aquifer_layer,
-            layer.depth_to_base
-        ]) || null, 
-        [installationResults]
+    const aquiferLayers = useMemo(
+        () => (aquiferData ? flattenAquiferData(aquiferData) : null),
+        [aquiferData]
     );
 
     return (
@@ -32,6 +30,7 @@ export const GlobalConfigProvider = ({ children }) => {
             casingStages, 
             mapInstance, setMapInstance, 
             responseData, setResponseData,
+            aquiferData, setAquiferData,
             coordinates, setCoordinates,
             error, setError,
             //flattenResponseData,
