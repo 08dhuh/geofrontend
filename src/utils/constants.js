@@ -23,6 +23,26 @@ export const CASING_STAGES = [
 
 export const COST_STAGES = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
 
+export const vaf_mapping = {
+    '100qa': 'Quaternary Alluvium (100)',
+    '101utb': 'Upper Tertiary/Quaternary Basalt (101)',
+    '102utqa': 'Upper Tertiary-Quaternary Aquifer (102)',
+    '103utqd': 'Upper Tertiary-Quaternary Aquitard (103)',
+    '104utam': 'Upper Tertiary Aquifer (marine) (104)',
+    '105utaf': 'Upper Tertiary Aquifer (fluvial) (105)',
+    '106utd': 'Upper Tertiary Aquitard (106)',
+    '107umta': 'Upper-Mid Tertiary Aquifer (107)',
+    '108umtd': 'Upper-Mid Tertiary Aquitard (108)',
+    '109lmta': 'Lower-Mid Tertiary Aquifer (109)',
+    '110lmtd': 'Lower-Mid Tertiary Aquitard (110)',
+    '111lta': 'Lower Tertiary Aquifer (111)',
+    '112ltba': 'Lower Tertiary Basalt A stage (112)',
+    '112ltbb': 'Lower Tertiary Basalt B stage (112)',
+    '112ltb': 'Lower Tertiary Basalt (112)',
+    '113cps': 'Cretaceous & Permian Sediments (113)',
+    '114bse': 'Cretaceous & Palaeozoic Basement (114)'
+};
+
 
 //Default form input values
 export const DEFAULT_INPUT_VALUES = {

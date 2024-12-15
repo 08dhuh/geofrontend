@@ -1,7 +1,7 @@
 import React from 'react';
-import TotalCostTable from './TotalCostTable';
-
-import DetailedBreakdownTable from './DetailedBreakdownTable';
+import TotalCostTable from './tables/TotalCostTable';
+import AquiferTable from './tables/AquiferTable';
+import DetailedBreakdownTable from './tables/DetailedBreakdownTable';
 import DownloadButtons from '../DownloadButtons/DownloadButtons';
 import ErrorDisplay from './ErrorDisplay';
 import { useGlobalConfig } from '../../context/GlobalConfigContext';
@@ -19,7 +19,11 @@ const CalculationResultDisplay = () => {
                 </div>
             )}
 
-            {responseData && (
+            {aquiferLayers && <div id="aquifer-display" className="response-data">
+                <AquiferTable aquiferLayers={aquiferLayers} />
+                </div>}
+
+            {installationResults && (
                 <div id="result-display" className="response-data">
                     <DetailedBreakdownTable flattenedData={installationResults} />
                 </div>

@@ -40,3 +40,14 @@ export const flattenResponseData = (data) => {
 
     return flattenedData;
 };
+
+export const formatCurrency = (value, decimalPlaces = 0) => {
+    if (value === undefined || value === null) return ''; 
+    
+    return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+    }).format(value);
+};
