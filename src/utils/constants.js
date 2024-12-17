@@ -2,7 +2,7 @@ export const DEFAULT_COORDINATES = [-38.1950, 146.5400];
 
 //Labels for form fields
 export const LABELS = {
-    required_flow_rate: "Required flow rate (m³/s)",
+    required_flow_rate: "Required flow rate (m³/day)",
     hydraulic_conductivity: "Aquifer hydraulic conductivity (m/day)",
     average_porosity: "Average reservoir porosity (0 - 1)",
     bore_lifetime_year: "Bore/project lifetime (years)",
