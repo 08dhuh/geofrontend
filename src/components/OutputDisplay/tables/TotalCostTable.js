@@ -1,6 +1,6 @@
 import React from 'react';
-import { COST_STAGES } from '../../utils/constants';
-
+import { COST_STAGES } from '../../../utils/constants';
+import { formatCurrency } from '../../../utils/Utils';
 const TotalCostTable = ({ totalCostTable }) => {
     if (!totalCostTable) return null;
 
@@ -20,9 +20,9 @@ const TotalCostTable = ({ totalCostTable }) => {
                 {COST_STAGES.map((stage, index) => (
                     <tr key={stage}>
                         <td>{stage}</td>
-                        <td>{Math.round(totalCostTable.low[index])}</td>
-                        <td>{Math.round(totalCostTable.base[index])}</td>
-                        <td>{Math.round(totalCostTable.high[index])}</td>
+                        <td>{formatCurrency(totalCostTable.low[index])}</td>
+                        <td>{formatCurrency(totalCostTable.base[index])}</td>
+                        <td>{formatCurrency(totalCostTable.high[index])}</td>
                     </tr>
                 ))}
             </tbody>

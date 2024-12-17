@@ -1,10 +1,25 @@
-import { CASING_STAGES as casingStages} from "./constants";
+import { CASING_STAGES as casingStages } from "./constants";
 
-export const flattenResponseData = (data) => {
-    const flattenedData = {};
+export const flattenAquiferData = (aquiferTable) => {
+
+    if (aquiferTable) {
+        const flattenedAquiferData = aquiferTable.aquifer_layer.map((layer, index) => ({
+            layer: layer,
+            depth: aquiferTable.depth_to_base[index],
+        }));
+        return flattenedAquiferData;
+    }
+
+};
+
+
+export const flattenCalculationResultData = (data) => {
 
     //installation results
-    const installationResults = data.data.installation_results;
+    const installationResults = data.installation_results;
+
+    const flattenedData = {};
+
     for (const key in installationResults) {
         if (typeof installationResults[key] !== 'object' || installationResults[key] === null) {
             let val = installationResults[key];
@@ -12,12 +27,8 @@ export const flattenResponseData = (data) => {
         }
     }
     // aquifer_table
-    const aquiferTableData = installationResults.aquifer_table;
-    flattenedData['aquifer_table'] = aquiferTableData.aquifer_layer.map((layer, index) => ({
-        aquifer_layer: layer,
-        is_aquifer: aquiferTableData.is_aquifer[index],
-        depth_to_base: aquiferTableData.depth_to_base[index],
-    }));
+    //const aquiferTableData = installationResults.aquifer_table;
+
     //casing_stage_table
     const casingStagesData = installationResults.casing_stage_table;
     flattenedData['casing_stage_table'] = casingStagesData.top.map((_, index) => ({
@@ -29,7 +40,7 @@ export const flattenResponseData = (data) => {
     }));
 
     //cost estimation table
-    const costResults = data.data.cost_results.cost_estimation_table;
+    const costResults = data.cost_results.cost_estimation_table;
     flattenedData['cost_estimation_table'] = costResults.map(item => ({
         stage: item.stage,
         component: item.components,
@@ -39,4 +50,15 @@ export const flattenResponseData = (data) => {
     }));
 
     return flattenedData;
+};
+
+export const formatCurrency = (value, decimalPlaces = 0) => {
+    if (value === undefined || value === null) return '';
+
+    return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+    }).format(value);
 };

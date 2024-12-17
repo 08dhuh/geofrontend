@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { formatCurrency } from '../../../utils/Utils';
 const CostBreakdownTable = ({ costData }) => (
     <>
         <h3>Cost Breakdown</h3>
@@ -18,9 +18,9 @@ const CostBreakdownTable = ({ costData }) => (
                     <tr key={index}>
                         <td>{item.stage}</td>
                         <td>{item.component}</td>
-                        <td>{item.low}</td>
-                        <td>{item.base}</td>
-                        <td>{item.high}</td>
+                        <td>{formatCurrency(item.low)}</td>
+                        <td>{formatCurrency(item.base)}</td>
+                        <td>{formatCurrency(item.high)}</td>
                     </tr>
                 ))}
             </tbody>
