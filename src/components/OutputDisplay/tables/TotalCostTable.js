@@ -4,8 +4,6 @@ import { formatCurrency } from '../../../utils/Utils';
 const TotalCostTable = ({ totalCostTable }) => {
     if (!totalCostTable) return null;
 
-    //const COST_STAGES = ["Drilling Rates", "Materials", "Others", "Time Rates", "Total Cost"];
-
     return (
         <table>
             <thead>

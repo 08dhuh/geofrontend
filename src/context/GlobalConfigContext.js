@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { LABELS, CASING_STAGES, DEFAULT_COORDINATES } from '../utils/constants';
+import { INPUT_LABELS, CASING_STAGES, DEFAULT_COORDINATES } from '../utils/constants';
 import { flattenAquiferData, flattenCalculationResultData } from '../utils/Utils';
 
 const GlobalConfigContext = createContext();
@@ -12,7 +12,7 @@ export const GlobalConfigProvider = ({ children }) => {
     const [error, setError] = useState(null);  
 
     const casingStages = CASING_STAGES;
-    const labels = LABELS;
+    const labels = INPUT_LABELS;
 
     const installationResults = useMemo(() => 
         responseData ? flattenCalculationResultData(responseData) : null, 

@@ -6,9 +6,11 @@ import * as XLSX from 'xlsx';
 
 import { useGlobalConfig } from '../../context/GlobalConfigContext';
 import leafletImage from 'leaflet-image';
+import { formatCurrency } from '../../utils/Utils';
+import { COST_STAGES } from '../../utils/constants';
 
 export const DownloadButtons = () => {
-    const { coordinates, mapInstance, installationResults, aquiferLayers } = useGlobalConfig();
+    const { coordinates, mapInstance, installationResults, aquiferLayers, responseData } = useGlobalConfig();
     const downloadPDF = async () => {
         const doc = new jsPDF();
         //set text parameters
@@ -53,13 +55,10 @@ export const DownloadButtons = () => {
         doc.text("Groundwater layers", margin, yPosition);
         yPosition += lineHeight;
 
-        // const aquiferLayers = installationResults.aquifer_table.map(layer => [
-        //     layer.aquifer_layer,
-        //     layer.depth_to_base
-        // ]);
+        console.log(aquiferLayers); 
         doc.autoTable({
             head: [['Aquifer/Aquitard', 'Depth to base(m)']],
-            body: aquiferLayers,
+            body: aquiferLayers.map(item => [item.layer, item.depth]),
             startY: yPosition,
             margin: { top: lineHeight },
             theme: 'grid',
@@ -103,6 +102,28 @@ export const DownloadButtons = () => {
         });
         yPosition = doc.autoTable.previous.finalY + lineHeight;
 
+        //Total Cost
+
+        doc.setFontSize(15);
+        doc.text("Total Cost", margin, yPosition);
+        yPosition += lineHeight;
+
+        const totalCostTable = responseData.cost_results.total_cost_table;
+        const totalCostData = COST_STAGES.map((stage, index) => [
+            stage,
+            formatCurrency(totalCostTable.low[index]),
+            formatCurrency(totalCostTable.base[index]),
+            formatCurrency(totalCostTable.high[index])
+        ]            
+        );
+        doc.autoTable({
+            head: [['Stage', 'Low (AUD)', 'Base (AUD)', 'High (AUD)']],
+            body: totalCostData,
+            startY: yPosition,
+            theme: 'grid',
+        });
+        yPosition = doc.autoTable.previous.finalY + lineHeight;
+
         // Cost Breakdown
         doc.setFontSize(15);
         doc.text("Cost Breakdown", margin, yPosition);
@@ -111,9 +132,9 @@ export const DownloadButtons = () => {
         const costEstimationData = installationResults.cost_estimation_table.map(item => [
             item.stage,
             item.component,
-            item.low,
-            item.base,
-            item.high,
+            formatCurrency(item.low),
+            formatCurrency(item.base),
+            formatCurrency(item.high),
         ]);
 
         doc.autoTable({
@@ -130,13 +151,6 @@ export const DownloadButtons = () => {
 
 
     const downloadExcel = async () => {
-        // const installationResults = flattenResponseData(responseData);
-
-        // const aquiferLayers = installationResults.aquifer_table.map(layer => ({
-        //     "Groundwater Layer": layer.aquifer_layer,
-        //     "Depth to Base(m)": layer.depth_to_base
-        // }));
-
 
         const installationData = Object.keys(installationResults)
             .filter(key => !Array.isArray(installationResults[key]))

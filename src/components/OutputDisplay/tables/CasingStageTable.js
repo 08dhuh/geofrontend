@@ -7,10 +7,10 @@ const CasingStageTable = ({ casingData }) => (
             <thead>
                 <tr>
                     <th>Stage</th>
-                    <th>Top</th>
-                    <th>Bottom</th>
-                    <th>Casing</th>
-                    <th>Drill Bit</th>
+                    <th>Top(m)</th>
+                    <th>Bottom(m)</th>
+                    <th>Casing(m)</th>
+                    <th>Drill Bit(m)</th>
                 </tr>
             </thead>
             <tbody>
