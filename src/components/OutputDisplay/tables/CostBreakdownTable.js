@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatCurrency } from '../../../utils/Utils';
+import { STAGE_LABELS, COMPONENT_LABELS } from '../../../utils/constants';
 const CostBreakdownTable = ({ costData }) => (
     <>
         <h3>Cost Breakdown</h3>
@@ -16,8 +17,8 @@ const CostBreakdownTable = ({ costData }) => (
             <tbody>
                 {costData.map((item, index) => (
                     <tr key={index}>
-                        <td>{item.stage}</td>
-                        <td>{item.component}</td>
+                        <td>{STAGE_LABELS[item.stage]}</td>
+                        <td>{COMPONENT_LABELS[item.component]}</td>
                         <td>{formatCurrency(item.low)}</td>
                         <td>{formatCurrency(item.base)}</td>
                         <td>{formatCurrency(item.high)}</td>
