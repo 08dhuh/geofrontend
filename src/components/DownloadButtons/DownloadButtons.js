@@ -212,8 +212,8 @@ export const DownloadButtons = () => {
 
     return (
         <div className="download-buttons">
-            <button onClick={downloadPDF}>Download as PDF</button>
-            <button onClick={downloadExcel}>Download as Excel</button>
+            <button type="button" onClick={downloadPDF}>Download as PDF</button>
+            <button type="button" onClick={downloadExcel}>Download as Excel</button>
         </div>
     )
 };

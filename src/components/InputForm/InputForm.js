@@ -40,35 +40,72 @@ const InputForm = () => {
         submitForm(data);
     }
 
-
     return (
-        <>
-            <div>
-                <form onSubmit={handleSubmit}>
-                    {Object.keys(inputValues).map((key) => (
-                        <div key={key} className="form-group">
-                            <label>{labels[key]}</label>
-                            <input
-                                type="text"
-                                name={key}
-                                value={inputValues[key]}
-                                onChange={handleInputChange}
-                            />
-                        </div>
-                    ))}
-                    <div className="form-group">
-                        <label>Production Pump:</label>
-                        <input
-                            type="checkbox"
-                            checked={isProductionPump}
-                            onChange={handleToggleChange}
-                        />
-                    </div>
-                    <button type="submit">Submit</button>
-                </form>
+        <div className="container mt-4">
+          <form onSubmit={handleSubmit} className="row g-3">
+            {Object.keys(inputValues).map((key) => (
+              <div key={key} className="col-md-6">
+                <label htmlFor={key} className="form-label">
+                  {labels[key]}
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id={key}
+                  name={key}
+                  value={inputValues[key]}
+                  onChange={handleInputChange}
+                />
+              </div>
+            ))}
+            <div className="col-md-6">
+              <label htmlFor="productionPump" className="form-label">
+                Production Pump
+              </label>
+              <input
+                type="checkbox"
+                className="form-check-input ms-2"
+                id="productionPump"
+                checked={isProductionPump}
+                onChange={handleToggleChange}
+              />
             </div>
-        </>
-    );
+            <div className="col-12">
+              <button type="submit" className="btn btn-primary w-100">
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
+      );
+    // return (
+    //     <>
+    //         <div>
+    //             <form onSubmit={handleSubmit}>
+    //                 {Object.keys(inputValues).map((key) => (
+    //                     <div key={key} className="form-group">
+    //                         <label>{labels[key]}</label>
+    //                         <input
+    //                             type="text"
+    //                             name={key}
+    //                             value={inputValues[key]}
+    //                             onChange={handleInputChange}
+    //                         />
+    //                     </div>
+    //                 ))}
+    //                 <div className="form-group">
+    //                     <label>Production Pump:</label>
+    //                     <input
+    //                         type="checkbox"
+    //                         checked={isProductionPump}
+    //                         onChange={handleToggleChange}
+    //                     />
+    //                 </div>
+    //                 <button type="submit">Submit</button>
+    //             </form>
+    //         </div>
+    //     </>
+    // );
 
 }
 
